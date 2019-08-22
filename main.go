@@ -15,10 +15,21 @@ func main() {
 	compressedKey := "cPmTTa8ctUckw7KYppLd1Vkx7jxjjRcpMqZ6Dm4n2FVfXRBRyirL" // compressed key
 	//unCompressedKey := "5JsjKubviP3TDfNfbE3qdxKuNqqSVCctEF3jzyw26qYzonGEgsE" //uncompressed private key
 	isCompressed := true
+	chain := "testnet" // testnet || mainnet
+	chainConfig := &btcchain.TestNet3Params
+
+	switch chain {
+	case "testnet":
+		chainConfig = &btcchain.TestNet3Params
+		break
+	case "mainnet":
+		chainConfig = &btcchain.MainNetParams
+		break
+	}
 	destination := "myyyjh1D3P592vCa5JcJ5Kt19YTrrChM9y"
 	amount := int64(2000)
 	txFee := int64(500)
-	acc, err := account.NewAccount(compressedKey, &btcchain.TestNet3Params, isCompressed)
+	acc, err := account.NewAccount(compressedKey, chainConfig, isCompressed)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -28,7 +39,7 @@ func main() {
 	log.Println("txFee", txFee)
 	log.Println("amount", amount)
 
-	btchelper := utils.NewBitPay("")
+	btchelper := utils.NewBitPay(chain)
 	ut, err = btchelper.GetUnspentTxs(acc.Address.String())
 	if err != nil {
 		log.Println("Error Getting unspent Tx", err)
@@ -46,7 +57,7 @@ func main() {
 	transaction.SetFee(txFee)
 	transaction.SetFrom(acc)
 	transaction.SetTo(destination)
-	transaction.SetConfig(&btcchain.TestNet3Params)
+	transaction.SetConfig(chainConfig)
 	transaction.SetIsCompress(isCompressed)
 	err = transaction.Execute()
 	if err != nil {
