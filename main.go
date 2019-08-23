@@ -68,8 +68,9 @@ func main() {
 
 	log.Println("rawTx: ", rawtx)
 	response, err := btchelper.BroadCastTX(rawtx)
-	log.Println(err)
-
+	if err != nil {
+		log.Fatalln("Error Broadcasting Tx", err)
+	}
 	log.Println("response: ", response)
 
 }
