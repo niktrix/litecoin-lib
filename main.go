@@ -12,9 +12,9 @@ import (
 func main() {
 	var ut []utils.UTXO
 
-	compressedKey := "cPmTTa8ctUckw7KYppLd1Vkx7jxjjRcpMqZ6Dm4n2FVfXRBRyirL" // compressed key
-	//unCompressedKey := "5JsjKubviP3TDfNfbE3qdxKuNqqSVCctEF3jzyw26qYzonGEgsE" //uncompressed private key
-	isCompressed := true
+	//compressedKey := "cPmTTa8ctUckw7KYppLd1Vkx7jxjjRcpMqZ6Dm4n2FVfXRBRyirL" // compressed key
+	unCompressedKey := "5JsjKubviP3TDfNfbE3qdxKuNqqSVCctEF3jzyw26qYzonGEgsE" //uncompressed private key
+	isCompressed := false
 	chain := "testnet" // testnet || mainnet
 	chainConfig := &btcchain.TestNet3Params
 
@@ -26,10 +26,10 @@ func main() {
 		chainConfig = &btcchain.MainNetParams
 		break
 	}
-	destination := "myyyjh1D3P592vCa5JcJ5Kt19YTrrChM9y"
-	amount := int64(2000)
-	txFee := int64(500)
-	acc, err := account.NewAccount(compressedKey, chainConfig, isCompressed)
+	destination := "<TO BTC ADDRESS>"
+	amount := int64(32000000000)
+	txFee := int64(1000)
+	acc, err := account.NewAccount(unCompressedKey, chainConfig, isCompressed)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -42,7 +42,7 @@ func main() {
 	btchelper := utils.NewBitPay(chain)
 	ut, err = btchelper.GetUnspentTxs(acc.Address.String())
 	if err != nil {
-		log.Println("Error Getting unspent Tx", err)
+		log.Fatalln("Error Getting unspent Tx", err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func main() {
 	transaction.SetIsCompress(isCompressed)
 	err = transaction.Execute()
 	if err != nil {
-		log.Println("Error Executing Tx", err)
+		log.Fatalln("Error Executing Tx", err)
 	}
 
 	rawtx := transaction.GetRaw()

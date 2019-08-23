@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"errors"
+	"log"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
@@ -64,18 +67,43 @@ func (tx *BTCTransaction) SetConfig(chainConfig *chaincfg.Params) *BTCTransactio
 }
 
 func (tx *BTCTransaction) Execute() error {
-	// GET first UTXO
-	firstUnspentTx := tx.unspentTX[0]
-	sourceUTXOHash, err := chainhash.NewHashFromStr(firstUnspentTx.Txid)
+	log.Println(tx.balance())
+	log.Println(tx.need(tx.amount + tx.fee))
+
+	if tx.balance() < tx.amount+tx.fee {
+		return errors.New("Unsufficient balance")
+	}
+
+	sourcePkScript, err := txscript.PayToAddrScript(tx.from.Address)
 	if err != nil {
 		return err
 	}
 
-	sourceUTXO := wire.NewOutPoint(sourceUTXOHash, firstUnspentTx.Vout)
-	//calculate left amout to get that utxo as out
-	leftAmount := firstUnspentTx.Satoshis - (tx.amount + tx.fee)
+	redeemTx := wire.NewMsgTx(wire.TxVersion)
+	sourceTxOut := wire.NewTxOut(tx.amount, sourcePkScript)
+	totalAmoutNeeded := tx.amount + tx.fee
+	totalAmoutInUTXO := int64(0)
 
-	sourceTxIn := wire.NewTxIn(sourceUTXO, nil, nil)
+	for i := 0; i <= tx.need(tx.amount+tx.fee); i++ {
+		utxo := tx.unspentTX[i]
+		totalAmoutInUTXO = totalAmoutInUTXO + utxo.Satoshis
+		sourceUTXOHash, err := chainhash.NewHashFromStr(utxo.Txid)
+		if err != nil {
+			return err
+		}
+		sourceUTXO := wire.NewOutPoint(sourceUTXOHash, utxo.Vout)
+		sourceTxIn := wire.NewTxIn(sourceUTXO, nil, nil)
+
+		redeemTx.AddTxIn(sourceTxIn)
+
+	}
+
+	if totalAmoutInUTXO > totalAmoutNeeded {
+		leftAmout := wire.NewTxOut(totalAmoutInUTXO-totalAmoutNeeded, sourcePkScript)
+		redeemTx.AddTxOut(leftAmout)
+	}
+
+	//calculate left amout to get that utxo as out
 
 	destinationAddress, err := btcutil.DecodeAddress(tx.to, tx.chainConfig)
 	if err != nil {
@@ -87,26 +115,17 @@ func (tx *BTCTransaction) Execute() error {
 		return err
 	}
 
-	sourcePkScript, err := txscript.PayToAddrScript(tx.from.Address)
-	if err != nil {
-		return err
-	}
-
-	sourceTxOut := wire.NewTxOut(tx.amount, sourcePkScript)
-
-	redeemTx := wire.NewMsgTx(wire.TxVersion)
-	redeemTx.AddTxIn(sourceTxIn)
-	leftAmout := wire.NewTxOut(leftAmount, sourcePkScript)
-	redeemTx.AddTxOut(leftAmout)
 	redeemTxOut := wire.NewTxOut((tx.amount - tx.fee), destinationPkScript)
 	redeemTx.AddTxOut(redeemTxOut)
 
-	sigScript, err := txscript.SignatureScript(redeemTx, 0, sourceTxOut.PkScript, txscript.SigHashAll, tx.from.PrivateKey, tx.isCompress)
-	if err != nil {
-		return err
-	}
+	for i := 0; i <= tx.need(tx.amount+tx.fee); i++ {
+		sigScript, err := txscript.SignatureScript(redeemTx, i, sourceTxOut.PkScript, txscript.SigHashAll, tx.from.PrivateKey, tx.isCompress)
+		if err != nil {
+			return err
+		}
+		redeemTx.TxIn[i].SignatureScript = sigScript
 
-	redeemTx.TxIn[0].SignatureScript = sigScript
+	}
 
 	// validate signature
 	flags := txscript.StandardVerifyFlags
@@ -121,6 +140,24 @@ func (tx *BTCTransaction) Execute() error {
 	tx.txOut = redeemTx
 
 	return nil
+}
+
+func (tx *BTCTransaction) balance() (totalbalance int64) {
+	for _, v := range tx.unspentTX {
+		totalbalance = v.Satoshis + totalbalance
+	}
+	return
+}
+
+func (tx *BTCTransaction) need(balance int64) (upto int) {
+	totalbalance := int64(0)
+	for i, v := range tx.unspentTX {
+		totalbalance = v.Satoshis + totalbalance
+		if balance <= totalbalance {
+			return i
+		}
+	}
+	return
 }
 
 func (tx *BTCTransaction) GetRaw() string {
