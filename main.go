@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/niktrix/bitcoin-lib/account"
-	"github.com/niktrix/bitcoin-lib/utils"
+	"github.com/niktrix/litecoin-lib/account"
+	"github.com/niktrix/litecoin-lib/utils"
 
 	"log"
 
-	btcchain "github.com/btcsuite/btcd/chaincfg"
+	"github.com/ltcsuite/ltcd/chaincfg"
 )
 
 func main() {
@@ -16,20 +16,20 @@ func main() {
 	unCompressedKey := "5JsjKubviP3TDfNfbE3qdxKuNqqSVCctEF3jzyw26qYzonGEgsE" //uncompressed private key
 	isCompressed := false
 	chain := "testnet" // testnet || mainnet
-	chainConfig := &btcchain.TestNet3Params
+	chainConfig := &chaincfg.TestNet4Params
 
 	switch chain {
 	case "testnet":
-		chainConfig = &btcchain.TestNet3Params
+		chainConfig = &chaincfg.TestNet4Params
 		break
 	case "mainnet":
-		chainConfig = &btcchain.MainNetParams
+		chainConfig = &chaincfg.TestNet4Params
 		break
 	}
-	destination := "<TO BTC ADDRESS>"
-	amount := int64(32000000000)
+	destination := "n4krVFzihcjiSzRKiUbeczt9E7X7s9DQBJ"
+	amount := int64(32000)
 	txFee := int64(1000)
-	acc, err := account.NewAccount(unCompressedKey, chainConfig, isCompressed)
+	acc, err := account.NewAccount(unCompressedKey, chainConfig,isCompressed)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -64,9 +64,9 @@ func main() {
 		log.Fatalln("Error Executing Tx", err)
 	}
 
-	rawtx := transaction.GetRaw()
+	 rawtx := transaction.GetRaw()
 
-	log.Println("rawTx: ", rawtx)
+	 log.Println("rawTx: ", rawtx)
 	response, err := btchelper.BroadCastTX(rawtx)
 	if err != nil {
 		log.Fatalln("Error Broadcasting Tx", err)

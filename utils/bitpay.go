@@ -2,11 +2,12 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/niktrix/bitcoin-lib/request"
+	"github.com/niktrix/litecoin-lib/request"
 )
 
-const TEST_URL = "https://test-insight.bitpay.com"
+const TEST_URL = "https://testnet.litecore.io/api/addr"
 const MAINNET_URL = "https://insight.bitpay.com"
 
 type BitPay struct {
@@ -23,14 +24,16 @@ func NewBitPay(chain string) *BitPay {
 }
 
 func (bp *BitPay) GetUnspentTxs(address string) (ut []UTXO, err error) {
-	url := bp.url + "/api/addrs/utxo"
-	utxo, err := request.New().SetURL(url).SetRequestType("POST").SetBody("{\n\t\"addrs\":\"" + address + "\"\n}").Execute()
+	url := bp.url + "/" + address + "/utxo"
+	fmt.Println(url)
+	utxo, err := request.New().SetURL(url).SetRequestType("GET").Execute()
 	if err != nil {
-		return nil, err
+		return ut, err
 	}
+	//fmt.Println(string(utxo))
 	err = json.Unmarshal(utxo, &ut)
 	if err != nil {
-		return nil, err
+		return ut, err
 	}
 	return
 

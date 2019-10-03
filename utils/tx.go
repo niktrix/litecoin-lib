@@ -4,12 +4,12 @@ import (
 	"errors"
 	"log"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/niktrix/bitcoin-lib/account"
+	"github.com/ltcsuite/ltcd/chaincfg"
+	"github.com/ltcsuite/ltcd/chaincfg/chainhash"
+	"github.com/ltcsuite/ltcd/txscript"
+	"github.com/ltcsuite/ltcd/wire"
+	"github.com/ltcsuite/ltcutil"
+	"github.com/niktrix/litecoin-lib/account"
 
 	"bytes"
 
@@ -105,7 +105,7 @@ func (tx *BTCTransaction) Execute() error {
 
 	//calculate left amout to get that utxo as out
 
-	destinationAddress, err := btcutil.DecodeAddress(tx.to, tx.chainConfig)
+	destinationAddress, err := ltcutil.DecodeAddress(tx.to, tx.chainConfig)
 	if err != nil {
 		return err
 	}
