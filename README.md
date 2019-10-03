@@ -1,1 +1,1 @@
-# bitcoin-lib
+# litecoin-lib
